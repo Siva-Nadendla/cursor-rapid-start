@@ -6,6 +6,14 @@
 > This repo receives only approved deliverables exported from the internal working repo.
 > A `.client_delivery_repo_root` marker identifies this as a delivery repo.
 
+## Naming and File Conventions
+
+- This is a clean client delivery repo. `.cursor` must not be present.
+- No internal prompts, logs, outputs, raw data, or secrets belong here.
+- Scripts should use snake_case with `.ps1`.
+- Config files should be client-safe (non-secret values only).
+- This README intentionally omits internal Cursor workflow details beyond stating that this is a clean delivery repo.
+
 ## Features
 
 - <Feature 1>

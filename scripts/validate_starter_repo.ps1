@@ -85,7 +85,9 @@ $expected = @(
     "prompts\00_workspace_safety_check.md",
     "prompts\01_internal_project_workspace_safety.md",
     "prompts\02_run_starter_kit.md",
-    "templates\internal_workspace_safety_check.ps1.template"
+    "templates\internal_workspace_safety_check.ps1.template",
+    "prompts\07_naming_and_file_conventions.md",
+    "cursor-rules-standard\07_naming_conventions.mdc"
 )
 
 foreach ($item in $expected) {

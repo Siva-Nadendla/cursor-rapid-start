@@ -228,7 +228,18 @@ else {
         ('* `pwd` points to `' + $internalRepoPath + '`'),
         '* marker file returns `True`',
         "",
-        "If not, stop immediately."
+        "If not, stop immediately.",
+        "",
+        "## Naming and File Conventions",
+        "",
+        "- Repos use hyphen-case.",
+        '- Scripts use snake_case with `.ps1`.',
+        '- Prompts use numbered snake_case with `.md`.',
+        '- Cursor rules use numbered snake_case with `.mdc`.',
+        '- Templates use snake_case with `.template`.',
+        "- Marker files use the standard dotfile names.",
+        "- Do not use spaces in filenames.",
+        '- Client delivery repos must not contain `.cursor`.'
     )
     Set-Content -LiteralPath $projectRulePath -Value $ruleLines -Encoding UTF8
     Write-Host "  Generated: $projectRulePath"

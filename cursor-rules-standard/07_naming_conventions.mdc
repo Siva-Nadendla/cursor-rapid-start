@@ -1,0 +1,38 @@
+---
+description: Naming and file-extension conventions for internal repos and their contents.
+globs:
+alwaysApply: true
+---
+
+# Naming Conventions
+
+Apply this standard to this repo and to anything it generates.
+
+## Repositories
+
+- Use hyphen-case for repo names.
+- Internal working repos use the `work-` prefix.
+- Client delivery repos use the `deliver-` prefix where applicable.
+
+## Files
+
+- Use snake_case for scripts, prompts, templates, and generated files.
+- Use `.ps1` for PowerShell scripts.
+- Use `.md` for prompts and documentation.
+- Use `.mdc` for Cursor rules.
+- Use `.template` for starter templates.
+- Prompts and Cursor rules use numeric prefixes (for example `00_`, `01_`, `99_`).
+
+## Marker Files
+
+Use the standard marker dotfiles exactly as defined:
+
+- `.cursor_rapid_start_root`
+- `.internal_cursor_project_root`
+- `.client_delivery_repo_root`
+
+## Hard Rules
+
+- Do not create files with spaces in their names.
+- Do not create client-visible Cursor files; client delivery repos must never contain `.cursor`.
+- When adding project-specific files, follow the same naming convention unless a client explicitly requires otherwise.

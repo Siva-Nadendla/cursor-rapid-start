@@ -9,6 +9,13 @@
 - The client delivery repo is a **separate** repo. Keep it clean.
 - Run Cursor prompts and use `.cursor/rules` **only** from this internal repo, never from the client delivery repo.
 
+## Naming and File Conventions
+
+- This internal working repo uses `work-...` naming; its paired client delivery repo uses `deliver-...` naming where applicable.
+- Scripts use `.ps1`, prompts use `.md`, Cursor rules use `.mdc`, templates use `.template`.
+- Marker files identify the repo type (`.internal_cursor_project_root` here, `.client_delivery_repo_root` in the client repo).
+- Do not use spaces in filenames. Do not run prompts from the wrong workspace.
+
 ## Overview
 
 <Short internal description of the project, goals, and current status.>

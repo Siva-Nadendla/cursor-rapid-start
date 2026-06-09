@@ -9,7 +9,16 @@ alwaysApply: false
 - Every repo has a README. Internal repos use the INTERNAL template; client repos use the CLIENT template.
 - Client-facing docs must be stable, traceable, explainable, and easy to present.
 - Never include secrets, internal URLs, internal prompts, or `.cursor` references in client docs.
-- Document: purpose, setup (PowerShell), configuration (non-secret), run commands, and architecture.
 - Keep setup and run commands accurate and copy-paste ready for Windows PowerShell.
 - Note required Azure services and roles where relevant (no secret values).
 - Update docs whenever behavior or commands change.
+- Follow the naming and file-extension standard in `07_naming_conventions.mdc`.
+
+Every README must document:
+
+- Repo purpose
+- Internal vs client boundary
+- Folder structure
+- Naming convention summary
+- Setup commands
+- Export process
