@@ -5,9 +5,10 @@
 
 .DESCRIPTION
     Scans for forbidden paths (.cursor, prompts, .env, logs, outputs, data, raw,
-    README_INTERNAL) and for likely secret patterns inside text files. Returns a
-    non-zero exit code if any blocking finding is detected, so export scripts and CI
-    can fail fast.
+    .venv, venv, __pycache__, README_INTERNAL), for likely secret patterns, and for
+    hardcoded local machine paths (e.g. C:\Users\... or C:\venvs\...) inside text
+    files. Returns a non-zero exit code if any blocking finding is detected, so
+    export scripts and CI can fail fast.
 
 .PARAMETER SourceRepo
     Path to the internal working repo to scan.
@@ -40,7 +41,7 @@ Write-Host ""
 $findings = @()
 
 # 1) Forbidden path patterns (anywhere in the tree, excluding .git)
-$forbiddenDirNames = @(".cursor", "prompts", "logs", "outputs", "output", "data", "raw", "tmp", "temp", "secrets", "credentials")
+$forbiddenDirNames = @(".cursor", "prompts", "logs", "outputs", "output", "data", "raw", "tmp", "temp", "secrets", "credentials", ".venv", "venv", "__pycache__")
 $forbiddenFileGlobs = @("*.env", ".env", ".env.*", "*.key", "*.pem", "*.pfx", "*.p12", "*.crt", "*.cer", "README_INTERNAL.md", ".cursorignore", ".cursorindexingignore")
 
 $allItems = Get-ChildItem -LiteralPath $resolvedRoot -Recurse -Force |
@@ -53,6 +54,8 @@ foreach ($item in $allItems) {
         }
     }
     else {
+        # .env.example is an allowed placeholder file; never flag it.
+        if ($item.Name -eq ".env.example") { continue }
         foreach ($glob in $forbiddenFileGlobs) {
             if ($item.Name -like $glob) {
                 $findings += [pscustomobject]@{ Type = "ForbiddenFile"; Path = $item.FullName; Detail = $glob }
@@ -68,7 +71,8 @@ $secretPatterns = @(
     @{ Name = "AzureStorageConnString"; Pattern = "DefaultEndpointsProtocol=.*AccountKey=" },
     @{ Name = "SasToken"; Pattern = "[\?&]sig=[A-Za-z0-9%]+" },
     @{ Name = "BearerToken"; Pattern = "(?i)bearer\s+[A-Za-z0-9\-_\.]{20,}" },
-    @{ Name = "GenericAssignedSecret"; Pattern = "(?i)(password|passwd|secret|api[_-]?key|access[_-]?key|client[_-]?secret|connection[_-]?string)\s*[:=]\s*['""]?[A-Za-z0-9/\+=_\-]{8,}" }
+    @{ Name = "GenericAssignedSecret"; Pattern = "(?i)(password|passwd|secret|api[_-]?key|access[_-]?key|client[_-]?secret|connection[_-]?string)\s*[:=]\s*['""]?[A-Za-z0-9/\+=_\-]{8,}" },
+    @{ Name = "HardcodedLocalPath"; Pattern = "(?i)[A-Za-z]:\\(Users|venvs)\\" }
 )
 
 $textExtensions = @(".py", ".md", ".txt", ".yaml", ".yml", ".json", ".ini", ".cfg", ".toml", ".ps1", ".env", ".config", ".xml", ".js", ".ts")

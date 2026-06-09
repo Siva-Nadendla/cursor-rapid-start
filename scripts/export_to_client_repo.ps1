@@ -1,11 +1,18 @@
 <#
 .SYNOPSIS
-    Exports a clean client delivery repo from an internal working repo.
+    Copies ONLY approved deliverables from an internal repo to a client repo.
 
 .DESCRIPTION
-    Runs the pre-export scan first. If it passes, copies only safe content to a new
-    client repo, excluding all Cursor artifacts, secrets, prompts, logs, outputs, and
-    raw data. Renders client-facing .gitignore and README from templates.
+    Uses an explicit ALLOWLIST so nothing leaks by accident. Runs the pre-export scan
+    first and aborts if it fails. A BLOCKLIST is applied as defense-in-depth while
+    copying directory contents.
+
+    Allowed (top-level):
+      src, pipelines, scripts, docs, requirements.txt, config.yaml, README.md, .env.example
+    Blocked (never copied):
+      .cursor, .env, logs, outputs, data/raw, secrets, credentials, .venv, venv, __pycache__
+
+    Non-destructive: creates/overwrites only inside the client repo, never deletes from source.
 
 .PARAMETER SourceRepo
     Path to the internal working repo.
@@ -14,13 +21,13 @@
     Destination path for the clean client repo (created if missing).
 
 .PARAMETER SkipScan
-    Skip the pre-export scan. NOT recommended.
+    Skip the post-export verification scan of the client repo. NOT recommended.
 
 .PARAMETER Force
-    Allow export into an existing non-empty client folder.
+    Overwrite existing files in the client repo.
 
 .EXAMPLE
-    .\export_to_client_repo.ps1 -SourceRepo "C:\...\my-project" -ClientRepo "C:\...\my-project-client"
+    .\export_to_client_repo.ps1 -SourceRepo "C:\...\acme-internal" -ClientRepo "C:\...\acme-client"
 #>
 [CmdletBinding()]
 param(
@@ -46,28 +53,23 @@ if (-not (Test-Path -LiteralPath $SourceRepo)) {
 }
 $sourceRoot = (Resolve-Path -LiteralPath $SourceRepo).Path
 
-# 1) Safety gate
-if (-not $SkipScan) {
-    $scan = Join-Path $PSScriptRoot "scan_before_export.ps1"
-    if (-not (Test-Path -LiteralPath $scan)) {
-        throw "scan_before_export.ps1 not found; cannot verify safety. Aborting."
-    }
-    Write-Host "Running pre-export scan..."
-    & $scan -SourceRepo $sourceRoot
-    if ($LASTEXITCODE -ne 0) {
-        throw "Pre-export scan failed. Resolve findings or re-run with explicit -SkipScan (not recommended). Aborting export."
-    }
-    Write-Host ""
-}
-else {
-    Write-Warning "Pre-export scan SKIPPED by request."
-}
+# --- Allow / block definitions ---------------------------------------------------
+$allowedDirs = @("src", "pipelines", "scripts", "docs")
+$allowedFiles = @("requirements.txt", "config.yaml", "README.md", ".env.example")
 
-# 2) Prepare destination
+# Names that must NEVER be copied, even if nested inside an allowed directory.
+$blockedNames = @(".cursor", ".env", "logs", "outputs", "raw", "secrets", "credentials", ".venv", "venv", "__pycache__")
+$blockedFileGlobs = @(".env", "*.env", ".env.*", "*.key", "*.pem", "*.pfx", "*.p12", "*.crt", "*.cer", "*.log", "*.pyc")
+
+# NOTE: The internal source repo legitimately contains .cursor, logs, outputs, and
+# data/raw, so we do NOT scan it here. Instead, the CLEAN client repo is scanned
+# after copying (step 8) to verify nothing forbidden leaked through.
+
+# --- 1) Prepare destination ------------------------------------------------------
 if (Test-Path -LiteralPath $ClientRepo) {
     $existing = Get-ChildItem -LiteralPath $ClientRepo -Force | Where-Object { $_.Name -ne ".git" }
     if ($existing -and (-not $Force)) {
-        throw "Client repo exists and is not empty: $ClientRepo (use -Force to proceed)"
+        Write-Warning "Client repo exists and is not empty: $ClientRepo. Existing files are kept unless -Force."
     }
 }
 else {
@@ -75,78 +77,130 @@ else {
 }
 $clientRoot = (Resolve-Path -LiteralPath $ClientRepo).Path
 
-# 3) Exclusion rules (defense in depth even though scan passed)
-$excludeDirNames = @(".git", ".cursor", "prompts", "logs", "outputs", "output", "data", "raw", "tmp", "temp", "secrets", "credentials", ".venv", "venv", "env", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".idea", ".vscode")
-$excludeFileGlobs = @("*.env", ".env", ".env.*", "*.key", "*.pem", "*.pfx", "*.p12", "*.crt", "*.cer", "README_INTERNAL.md", ".cursorignore", ".cursorindexingignore", "*.log", "*.pyc")
-
-function Test-Excluded {
+# --- Helper: is any path segment blocked? ---------------------------------------
+function Test-Blocked {
     param([System.IO.FileSystemInfo]$Item)
-
-    # Exclude if any path segment matches an excluded directory name
     $relative = $Item.FullName.Substring($sourceRoot.Length).TrimStart('\')
     $segments = $relative -split '\\'
     foreach ($seg in $segments) {
-        if ($excludeDirNames -contains $seg) { return $true }
+        if ($blockedNames -contains $seg) { return $true }
     }
     if (-not $Item.PSIsContainer) {
-        foreach ($glob in $excludeFileGlobs) {
+        foreach ($glob in $blockedFileGlobs) {
             if ($Item.Name -like $glob) { return $true }
         }
     }
     return $false
 }
 
-$copied = @()
-$excluded = @()
+# --- Helper: copy a single file respecting -Force --------------------------------
+function Copy-FileSafe {
+    param([string]$SourcePath, [string]$DestPath)
+    if ((Test-Path -LiteralPath $DestPath) -and (-not $Force)) {
+        Write-Warning "  Skipped (exists, use -Force): $DestPath"
+        return $false
+    }
+    $destDir = Split-Path -Parent $DestPath
+    if (-not (Test-Path -LiteralPath $destDir)) {
+        New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+    }
+    Copy-Item -LiteralPath $SourcePath -Destination $DestPath -Force
+    return $true
+}
 
-$items = Get-ChildItem -LiteralPath $sourceRoot -Recurse -Force
-foreach ($item in $items) {
-    if (Test-Excluded -Item $item) {
-        $excluded += $item.FullName
+$copied = @()
+$skipped = @()
+
+# --- 3) Copy allowed directories (with blocklist filtering) ----------------------
+foreach ($dirName in $allowedDirs) {
+    $srcDir = Join-Path $sourceRoot $dirName
+    if (-not (Test-Path -LiteralPath $srcDir)) {
+        Write-Host "  (allowed dir not present, skipping): $dirName"
         continue
     }
-    $relative = $item.FullName.Substring($sourceRoot.Length).TrimStart('\')
-    $dest = Join-Path $clientRoot $relative
-    if ($item.PSIsContainer) {
-        if (-not (Test-Path -LiteralPath $dest)) {
-            New-Item -ItemType Directory -Path $dest -Force | Out-Null
+    $items = Get-ChildItem -LiteralPath $srcDir -Recurse -Force
+    foreach ($item in $items) {
+        if (Test-Blocked -Item $item) {
+            $skipped += $item.FullName
+            continue
         }
-    }
-    else {
-        $destDir = Split-Path -Parent $dest
-        if (-not (Test-Path -LiteralPath $destDir)) {
-            New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+        $relative = $item.FullName.Substring($sourceRoot.Length).TrimStart('\')
+        $dest = Join-Path $clientRoot $relative
+        if ($item.PSIsContainer) {
+            if (-not (Test-Path -LiteralPath $dest)) {
+                New-Item -ItemType Directory -Path $dest -Force | Out-Null
+            }
         }
-        Copy-Item -LiteralPath $item.FullName -Destination $dest -Force
-        $copied += $relative
+        else {
+            if (Copy-FileSafe -SourcePath $item.FullName -DestPath $dest) {
+                $copied += $relative
+            }
+        }
     }
 }
 
-# 4) Render client-facing .gitignore and README from templates (overwrite intentionally)
+# --- 4) Copy allowed top-level files --------------------------------------------
+foreach ($fileName in $allowedFiles) {
+    $srcFile = Join-Path $sourceRoot $fileName
+    if (-not (Test-Path -LiteralPath $srcFile)) {
+        Write-Host "  (allowed file not present, skipping): $fileName"
+        continue
+    }
+    $dest = Join-Path $clientRoot $fileName
+    if (Copy-FileSafe -SourcePath $srcFile -DestPath $dest) {
+        $copied += $fileName
+    }
+}
+
+# --- 5) Ensure client-facing .gitignore + README come from client templates -----
 $clientGitignoreSrc = Join-Path $templatesDir "gitignore_client.template"
 if (Test-Path -LiteralPath $clientGitignoreSrc) {
     Copy-Item -LiteralPath $clientGitignoreSrc -Destination (Join-Path $clientRoot ".gitignore") -Force
-    Write-Host "Wrote client .gitignore"
+    Write-Host "  Wrote client .gitignore"
 }
-
 $clientReadmeSrc = Join-Path $templatesDir "README_CLIENT.template.md"
 if (Test-Path -LiteralPath $clientReadmeSrc) {
-    $clientReadmeDest = Join-Path $clientRoot "README.md"
     $projName = Split-Path -Leaf $clientRoot
     (Get-Content -LiteralPath $clientReadmeSrc -Raw).Replace("<PROJECT_NAME>", $projName) |
-        Set-Content -LiteralPath $clientReadmeDest -Encoding UTF8
-    Write-Host "Wrote client README.md"
+        Set-Content -LiteralPath (Join-Path $clientRoot "README.md") -Encoding UTF8
+    Write-Host "  Wrote client README.md (from client template)"
 }
 
-# 5) Manifest
+# --- 6) Final safety assertion ---------------------------------------------------
+$leakChecks = @(".cursor", ".env", "logs", "outputs", (Join-Path "data" "raw"))
+foreach ($leak in $leakChecks) {
+    $leakPath = Join-Path $clientRoot $leak
+    if (Test-Path -LiteralPath $leakPath) {
+        throw "SAFETY: forbidden artifact present in client repo: $leakPath"
+    }
+}
+
+# --- 7) Post-export verification scan of the CLIENT repo -------------------------
+if (-not $SkipScan) {
+    $scan = Join-Path $PSScriptRoot "scan_before_export.ps1"
+    if (-not (Test-Path -LiteralPath $scan)) {
+        throw "scan_before_export.ps1 not found; cannot verify client repo. Aborting."
+    }
+    Write-Host ""
+    Write-Host "Verifying client repo is clean..."
+    & $scan -SourceRepo $clientRoot
+    if ($LASTEXITCODE -ne 0) {
+        throw "Client repo verification scan FAILED. Inspect findings above; client repo is NOT safe to share."
+    }
+}
+else {
+    Write-Warning "Post-export verification scan SKIPPED by request."
+}
+
+# --- 8) Manifest -----------------------------------------------------------------
 Write-Host ""
 Write-Host "Export complete: $clientRoot"
-Write-Host "Files copied: $($copied.Count)"
-Write-Host "Items excluded: $($excluded.Count)"
+Write-Host "Files copied : $($copied.Count)"
+Write-Host "Items blocked: $($skipped.Count)"
+if ($skipped.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Blocked (first 30):"
+    $skipped | Select-Object -First 30 | ForEach-Object { Write-Host "  - $_" }
+}
 Write-Host ""
-Write-Host "Excluded (first 30):"
-$excluded | Select-Object -First 30 | ForEach-Object { Write-Host "  - $_" }
-
-Write-Host ""
-Write-Host "Reminder: verify the client repo before sharing. Run scan against it too:"
-Write-Host "  .\scan_before_export.ps1 -SourceRepo `"$clientRoot`""
+Write-Host "Reminder: review the client repo before sharing."
