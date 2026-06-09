@@ -1,0 +1,29 @@
+{
+  "project_name": "my-project",
+  "description": "Internal Azure-first RAG service.",
+  "stack": {
+    "language": "python",
+    "frameworks": ["fastapi", "streamlit"],
+    "azure_services": [
+      "azure-ai-search",
+      "azure-openai",
+      "azure-blob-storage",
+      "azure-key-vault"
+    ]
+  },
+  "azure": {
+    "key_vault_url": "https://<your-vault-name>.vault.azure.net/",
+    "storage_account_name": "<your-storage-account>",
+    "storage_container": "<your-container>",
+    "openai_endpoint": "https://<your-openai-resource>.openai.azure.com/",
+    "openai_deployment": "<your-deployment-name>",
+    "openai_api_version": "2024-10-21",
+    "search_endpoint": "https://<your-search-service>.search.windows.net",
+    "search_index": "<your-index-name>"
+  },
+  "options": {
+    "init_git": true,
+    "apply_standard_rules": true
+  },
+  "notes": "Secrets are stored in Azure Key Vault and accessed via managed identity. No secrets in this file."
+}

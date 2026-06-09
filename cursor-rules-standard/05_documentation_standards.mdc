@@ -1,0 +1,15 @@
+---
+description: Documentation standards for internal and client-facing repos.
+globs: *.md
+alwaysApply: false
+---
+
+# Documentation Standards
+
+- Every repo has a README. Internal repos use the INTERNAL template; client repos use the CLIENT template.
+- Client-facing docs must be stable, traceable, explainable, and easy to present.
+- Never include secrets, internal URLs, internal prompts, or `.cursor` references in client docs.
+- Document: purpose, setup (PowerShell), configuration (non-secret), run commands, and architecture.
+- Keep setup and run commands accurate and copy-paste ready for Windows PowerShell.
+- Note required Azure services and roles where relevant (no secret values).
+- Update docs whenever behavior or commands change.

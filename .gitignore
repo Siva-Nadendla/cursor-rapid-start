@@ -1,0 +1,47 @@
+# cursor-rapid-start (internal control repo)
+# NOTE: .cursor/ is intentionally NOT ignored here because this is the
+# internal control repo. Client delivery repos use templates/gitignore_client.template.
+
+# Secrets / credentials (never commit)
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.cer
+secrets/
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs / outputs / data
+logs/
+*.log
+outputs/
+output/
+tmp/
+temp/
+data/
+raw/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

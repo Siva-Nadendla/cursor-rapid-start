@@ -1,0 +1,19 @@
+---
+description: Safety rules for PowerShell automation in this repo.
+globs: scripts/*.ps1
+alwaysApply: false
+---
+
+# Script Safety
+
+All PowerShell scripts in `scripts/` must:
+
+- Be Windows PowerShell friendly (5.1+ compatible). Do not use heredocs.
+- Use `Set-StrictMode -Version Latest` and `$ErrorActionPreference = "Stop"`.
+- Validate input paths before acting; fail clearly with helpful messages.
+- Be non-destructive by default. Require an explicit `-Force` to overwrite existing files.
+- Never write secrets, tokens, keys, or connection strings to disk or logs.
+- For export, always run `scan_before_export.ps1` first and abort if it fails.
+- Use an explicit allowlist/exclusion model when copying to client repos; never assume content is safe.
+- Print a clear summary of what was created, copied, or excluded.
+- Return non-zero exit codes on failure so CI and chained scripts can stop.

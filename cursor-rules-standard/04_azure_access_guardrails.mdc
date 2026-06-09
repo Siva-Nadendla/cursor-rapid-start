@@ -1,0 +1,15 @@
+---
+description: Azure access guardrails - managed identity, Key Vault, Blob-first, AI Search + OpenAI.
+globs:
+alwaysApply: true
+---
+
+# Azure Access Guardrails
+
+- **Auth:** use `azure-identity` `DefaultAzureCredential` (managed identity in cloud, Azure CLI locally).
+- **Secrets:** resolve from Azure Key Vault via `azure-keyvault-secrets`. Never hardcode credentials.
+- **Storage:** blob-first read/write with `azure-storage-blob`; avoid local-disk pipelines for shared data.
+- **Retrieval/Generation:** use Azure AI Search + Azure OpenAI. Do not add FAISS or sentence-transformers.
+- **Least privilege:** scope RBAC roles narrowly and document which identity needs them.
+- Document required Azure resources and roles when wiring access.
+- Keep pipeline behavior observable and traceable.

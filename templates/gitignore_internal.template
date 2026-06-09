@@ -1,0 +1,46 @@
+# Internal working repo .gitignore
+# Internal repos MAY keep .cursor/ tracked. Secrets/outputs are always ignored.
+
+# Secrets / credentials
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.cer
+secrets/
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs / outputs / data
+logs/
+*.log
+outputs/
+output/
+tmp/
+temp/
+data/
+raw/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

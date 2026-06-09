@@ -1,0 +1,55 @@
+# Client delivery repo .gitignore
+# Client repos must NEVER contain Cursor artifacts, secrets, prompts, logs, outputs, or raw data.
+
+# Cursor artifacts (must never be present)
+.cursor/
+.cursorignore
+.cursorindexingignore
+
+# Internal-only docs / prompts
+prompts/
+README_INTERNAL.md
+
+# Secrets / credentials
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.cer
+secrets/
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs / outputs / data
+logs/
+*.log
+outputs/
+output/
+tmp/
+temp/
+data/
+raw/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

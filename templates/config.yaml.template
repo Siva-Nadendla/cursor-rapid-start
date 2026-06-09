@@ -1,0 +1,30 @@
+# Non-secret application configuration.
+# Secrets are resolved at runtime from Azure Key Vault via managed identity.
+
+app:
+  name: "<project-name>"
+  env: "local"          # local | dev | prod
+  log_level: "INFO"
+
+azure:
+  # Authentication uses DefaultAzureCredential (managed identity / Azure CLI).
+  key_vault_url: "https://<your-vault-name>.vault.azure.net/"
+
+  storage:
+    account_name: "<your-storage-account>"
+    container: "<your-container>"
+
+  openai:
+    endpoint: "https://<your-openai-resource>.openai.azure.com/"
+    deployment: "<your-deployment-name>"
+    api_version: "2024-10-21"
+
+  search:
+    endpoint: "https://<your-search-service>.search.windows.net"
+    index: "<your-index-name>"
+
+pipeline:
+  # Blob-first processing settings
+  input_prefix: "input/"
+  output_prefix: "output/"
+  batch_size: 16

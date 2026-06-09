@@ -1,0 +1,22 @@
+---
+description: Client delivery boundary - what must never reach a client repo.
+globs:
+alwaysApply: true
+---
+
+# Client Delivery Boundary
+
+Client delivery repos must **NEVER** contain:
+
+- `.cursor/` (rules, prompts, metadata), `.cursorignore`, `.cursorindexingignore`
+- `.env`, `.env.*`, or any secrets / keys / tokens / connection strings
+- `prompts/` (internal Cursor prompts)
+- `logs/`, `outputs/`, `output/`, `data/`, `raw/`, `tmp/`, `temp/`
+- `README_INTERNAL.md` or other internal-only docs
+
+Rules:
+
+- Always run the pre-export scan before exporting; if it fails, stop and report.
+- Export only an explicit safe allowlist of files; never copy by "exclude a few" logic alone.
+- Client repos use the client `.gitignore` and client `README.md` templates.
+- Never apply `.cursor/` rules to a client repo.

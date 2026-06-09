@@ -1,0 +1,20 @@
+---
+description: Governs the cursor_rapid_start internal control repo itself.
+globs:
+alwaysApply: true
+---
+
+# cursor_rapid_start Control Repo
+
+This is the **internal control repo** for the Cursor rapid-start framework. It is NOT a client repo.
+
+- This repo MAY contain `.cursor/rules`, `prompts/`, and internal automation.
+- Its purpose: scaffold internal working repos and export clean client delivery repos.
+- Keep changes minimal and safe; follow plan -> review -> code.
+- Do not create unnecessary folders or files.
+- Never store passwords, tokens, keys, certificates, or connection strings anywhere in this repo.
+- `templates/*.template` files are inert; scripts render them into active files in target repos.
+- Standard rules for downstream repos live in `cursor-rules-standard/` (copied by `scripts/apply_cursor_rules.ps1`).
+- The client delivery boundary is enforced by `scripts/scan_before_export.ps1` and `scripts/export_to_client_repo.ps1`.
+- Use Windows PowerShell for all scripts. Do not use heredocs.
+- Do not reintroduce FAISS or sentence-transformers.

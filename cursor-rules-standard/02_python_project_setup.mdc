@@ -1,0 +1,18 @@
+---
+description: Python project setup and conventions (Azure-first).
+globs: *.py
+alwaysApply: false
+---
+
+# Python Project Setup
+
+- Target Python 3.10+.
+- Use a virtual environment (`.venv`) and pin dependencies in `requirements.txt`.
+- Keep dependencies minimal and Azure-first:
+  `streamlit`, `fastapi`, `uvicorn`, `azure-identity`, `azure-storage-blob`,
+  `azure-keyvault-secrets`, `python-dotenv`, `pyyaml`.
+- **Do not** reintroduce FAISS or sentence-transformers unless explicitly requested.
+- Load non-secret config from `.env` (via `python-dotenv`) and `config.yaml` (via `pyyaml`).
+- Structure code into clear modules; avoid giant single files.
+- Provide exact PowerShell run/test commands after changes.
+- Prefer observable, traceable pipeline behavior (clear logging at INFO).

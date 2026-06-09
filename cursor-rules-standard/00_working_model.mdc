@@ -1,0 +1,16 @@
+---
+description: Core working model - plan, review, then code with minimal safe diffs.
+globs:
+alwaysApply: true
+---
+
+# Working Model
+
+- Follow **plan → review → code** for every task.
+- Read the relevant files before suggesting changes.
+- Explain the plan before editing.
+- Make minimal, safe diffs. Avoid broad rewrites unless explicitly requested.
+- Use Windows PowerShell commands. Do not use heredocs.
+- After code changes, provide exact local test commands.
+- Keep solutions stable, traceable, explainable, and easy to present for client-facing work.
+- Do not create unnecessary folders or files.
