@@ -1,6 +1,9 @@
 # Client delivery repo .gitignore
 # Client repos must NEVER contain Cursor artifacts, secrets, prompts, logs, outputs, or raw data.
 
+# Project marker (must stay tracked - never ignore)
+!.client_delivery_repo_root
+
 # Cursor artifacts (must never be present)
 .cursor/
 .cursorignore
@@ -45,6 +48,7 @@ output/
 tmp/
 temp/
 data/
+data/raw/
 raw/
 
 # OS / editor

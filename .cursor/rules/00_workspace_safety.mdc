@@ -1,0 +1,47 @@
+---
+description: Workspace safety rule for the cursor-rapid-start starter kit repo.
+globs:
+alwaysApply: true
+---
+
+# Workspace Safety Rule
+
+Before creating, editing, deleting, moving, or generating files, always verify the active workspace.
+
+## Expected Starter Kit Workspace
+
+The expected root path is:
+
+`C:\Users\SivaK\OneDrive\clientrepos\cursor-rapid-start`
+
+The expected root folder name is:
+
+`cursor-rapid-start`
+
+The required marker file is:
+
+`.cursor_rapid_start_root`
+
+## Mandatory Behavior
+
+If the workspace is not `cursor-rapid-start`, stop immediately.
+
+Do not create starter-kit files in:
+
+- Client repos
+- Internal working repos
+- SaskTel repos
+- HDFC folders
+- Any other unrelated project folder
+- Any recent Cursor sidebar item that is not this exact workspace
+
+## Before Writing Files
+
+Before writing files, always state:
+
+- Current workspace path
+- Target file path
+- Whether `.cursor_rapid_start_root` exists
+- Whether Git remote matches the expected `cursor-rapid-start` repo
+
+Never continue if the workspace check fails.

@@ -2,6 +2,10 @@
 
 <Short, client-facing description of what this application does.>
 
+> **Clean client delivery repo.** Do not run Cursor prompts here, and do not add a `.cursor` folder.
+> This repo receives only approved deliverables exported from the internal working repo.
+> A `.client_delivery_repo_root` marker identifies this as a delivery repo.
+
 ## Features
 
 - <Feature 1>

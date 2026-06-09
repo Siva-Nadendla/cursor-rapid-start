@@ -56,6 +56,22 @@ param(
     [switch]$Force
 )
 
+# Starter kit workspace safety check
+$ExpectedStarterRootName = "cursor-rapid-start"
+$StarterCurrentPath = (Get-Location).Path
+$StarterCurrentRoot = Split-Path -Leaf $StarterCurrentPath
+$StarterMarkerFile = Join-Path $StarterCurrentPath ".cursor_rapid_start_root"
+
+if ($StarterCurrentRoot -ne $ExpectedStarterRootName) {
+    Write-Error "Wrong workspace. Expected starter root folder '$ExpectedStarterRootName' but current folder is '$StarterCurrentRoot'. Open cursor-rapid-start and retry."
+    exit 1
+}
+
+if (!(Test-Path $StarterMarkerFile)) {
+    Write-Error "Missing marker file: .cursor_rapid_start_root. This does not appear to be the cursor-rapid-start repo."
+    exit 1
+}
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -115,6 +131,7 @@ New-DirectoryIfMissing -Path $VenvBasePath
 
 $internalRepoPath = Join-Path $BaseRepoPath $InternalRepoName
 $clientRepoPath = Join-Path $BaseRepoPath $ClientRepoName
+$venvPath = Join-Path $VenvBasePath $InternalRepoName
 
 if ($internalRepoPath -eq $clientRepoPath) {
     throw "InternalRepoName and ClientRepoName must be different."
@@ -191,10 +208,147 @@ else {
         "- Use scripts/export_to_client_repo.ps1 (allowlist) to produce client deliverables.",
         $azureLine,
         "- Keep secrets in Key Vault; never commit credentials. Use placeholders in .env.example only.",
-        "- Follow plan -> review -> code with minimal, safe diffs."
+        "- Follow plan -> review -> code with minimal, safe diffs.",
+        "",
+        "## Workspace Protection",
+        "",
+        "This project must only be modified from this internal Cursor workspace:",
+        "",
+        ('`' + $internalRepoPath + '`'),
+        "",
+        "Before running project prompts, verify:",
+        "",
+        '```powershell',
+        "pwd",
+        "Test-Path .\.internal_cursor_project_root",
+        '```',
+        "",
+        "Expected result:",
+        "",
+        ('* `pwd` points to `' + $internalRepoPath + '`'),
+        '* marker file returns `True`',
+        "",
+        "If not, stop immediately."
     )
     Set-Content -LiteralPath $projectRulePath -Value $ruleLines -Encoding UTF8
     Write-Host "  Generated: $projectRulePath"
+}
+
+# Internal repo workspace protection: root marker file
+$internalMarkerLines = @(
+    "This folder is an internal Cursor working repo created by cursor-rapid-start.",
+    "",
+    "Do not run this project's Cursor prompts from any other workspace.",
+    "",
+    "Internal repo name: $InternalRepoName",
+    "Client delivery repo name: $ClientRepoName",
+    "Internal repo path: $internalRepoPath",
+    "Client delivery repo path: $clientRepoPath",
+    "Venv path: $venvPath",
+    "",
+    "This repo may contain .cursor/rules.",
+    "The client delivery repo must not contain .cursor, .env, logs, outputs, data/raw, secrets, or credentials."
+)
+$internalMarkerPath = Join-Path $internalRepoPath ".internal_cursor_project_root"
+if ((Test-Path -LiteralPath $internalMarkerPath) -and (-not $Force)) {
+    Write-Warning "  Skipped .internal_cursor_project_root (exists, use -Force)"
+}
+else {
+    Set-Content -LiteralPath $internalMarkerPath -Value $internalMarkerLines -Encoding UTF8
+    Write-Host "  Created marker: $internalMarkerPath"
+}
+
+# Internal repo workspace protection: dynamic Cursor safety rule
+$internalSafetyRulePath = Join-Path $internalRulesDir "00_workspace_safety.mdc"
+if ((Test-Path -LiteralPath $internalSafetyRulePath) -and (-not $Force)) {
+    Write-Warning "  Skipped 00_workspace_safety.mdc (exists, use -Force)"
+}
+else {
+    $internalSafetyLines = @(
+        '---',
+        "description: Workspace safety rule for internal repo $InternalRepoName.",
+        'globs:',
+        'alwaysApply: true',
+        '---',
+        '',
+        '# Workspace Safety Rule',
+        '',
+        'This is an internal Cursor working repo.',
+        '',
+        '## Expected Workspace',
+        '',
+        'Internal repo name:',
+        '',
+        ('`' + $InternalRepoName + '`'),
+        '',
+        'Internal repo path:',
+        '',
+        ('`' + $internalRepoPath + '`'),
+        '',
+        'Required marker file:',
+        '',
+        '`.internal_cursor_project_root`',
+        '',
+        'Linked client delivery repo:',
+        '',
+        ('`' + $clientRepoPath + '`'),
+        '',
+        'Venv path:',
+        '',
+        ('`' + $venvPath + '`'),
+        '',
+        '## Mandatory Rule',
+        '',
+        'Before creating, editing, deleting, moving, or generating files, verify that the active workspace is this internal repo.',
+        '',
+        'The current workspace must match:',
+        '',
+        ('`' + $internalRepoPath + '`'),
+        '',
+        'The root marker file must exist:',
+        '',
+        '`.internal_cursor_project_root`',
+        '',
+        'If the workspace is not correct, stop immediately and say:',
+        '',
+        ('`Wrong workspace. Open ' + $internalRepoPath + ' before running this prompt.`'),
+        '',
+        '## Do Not Run Internal Prompts From',
+        '',
+        'Do not run this project''s prompts from:',
+        '',
+        '- The client delivery repo',
+        '- Another internal repo',
+        '- The `cursor-rapid-start` repo',
+        '- Any unrelated project folder',
+        '- Any recent Cursor sidebar item that is not this exact workspace',
+        '',
+        '## Client Boundary',
+        '',
+        'Never copy these to the client delivery repo:',
+        '',
+        '- `.cursor`',
+        '- `.env`',
+        '- `logs`',
+        '- `outputs`',
+        '- `data/raw`',
+        '- `secrets`',
+        '- `credentials`',
+        '- local scratch files',
+        '- private notes',
+        '- agent prompts',
+        '',
+        '## Before Any Action',
+        '',
+        'Before writing files, always state:',
+        '',
+        '- Current workspace path',
+        '- Target file path',
+        '- Whether `.internal_cursor_project_root` exists',
+        '- Whether the action is inside the approved internal repo'
+    )
+    Set-Content -LiteralPath $internalSafetyRulePath -Value $internalSafetyLines -Encoding UTF8
+    Write-Host "  Generated: $internalSafetyRulePath"
 }
 
 # =================================================================================
@@ -223,11 +377,31 @@ if (Test-Path -LiteralPath $clientCursorPath) {
     throw "SAFETY: .cursor exists in the client repo ($clientCursorPath). This must never happen."
 }
 
+# Client repo workspace protection: root marker file
+$clientMarkerLines = @(
+    "This folder is a clean client delivery repo created by cursor-rapid-start.",
+    "",
+    "Cursor prompts and .cursor/rules must not be used here.",
+    "",
+    "This repo should contain only approved client deliverables.",
+    "Do not copy .cursor, .env, logs, outputs, data/raw, secrets, credentials, or internal notes into this repo.",
+    "",
+    "Client delivery repo name: $ClientRepoName",
+    "Linked internal repo name: $InternalRepoName"
+)
+$clientMarkerPath = Join-Path $clientRepoPath ".client_delivery_repo_root"
+if ((Test-Path -LiteralPath $clientMarkerPath) -and (-not $Force)) {
+    Write-Warning "  Skipped .client_delivery_repo_root (exists, use -Force)"
+}
+else {
+    Set-Content -LiteralPath $clientMarkerPath -Value $clientMarkerLines -Encoding UTF8
+    Write-Host "  Created marker: $clientMarkerPath"
+}
+
 # =================================================================================
 # 3) VIRTUAL ENVIRONMENT + DEPENDENCIES (internal repo)
 # =================================================================================
 Write-Host ""
-$venvPath = Join-Path $VenvBasePath $InternalRepoName
 Write-Host "Creating virtual environment: $venvPath"
 
 $pythonExe = $null

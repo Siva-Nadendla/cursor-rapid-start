@@ -1,0 +1,8 @@
+This folder is the root of the cursor-rapid-start starter kit repository.
+
+Do not run starter-kit setup prompts from any other workspace.
+
+Expected root:
+C:\Users\SivaK\OneDrive\clientrepos\cursor-rapid-start
+
+If this marker file is missing, starter-kit scripts and prompts should stop before creating or modifying files.

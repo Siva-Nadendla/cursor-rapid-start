@@ -1,0 +1,16 @@
+# Internal project workspace safety check
+$ExpectedInternalRepoName = "<InternalRepoName>"
+$ExpectedInternalRepoPath = "<InternalRepoPath>"
+$CurrentPath = (Get-Location).Path
+$CurrentRoot = Split-Path -Leaf $CurrentPath
+$MarkerFile = Join-Path $CurrentPath ".internal_cursor_project_root"
+
+if ($CurrentRoot -ne $ExpectedInternalRepoName) {
+    Write-Error "Wrong workspace. Expected internal repo '$ExpectedInternalRepoName' but current folder is '$CurrentRoot'. Open $ExpectedInternalRepoPath and retry."
+    exit 1
+}
+
+if (!(Test-Path $MarkerFile)) {
+    Write-Error "Missing marker file: .internal_cursor_project_root. This does not appear to be the expected internal Cursor working repo."
+    exit 1
+}

@@ -3,6 +3,12 @@
 > Internal working repo. Contains `.cursor/rules`, internal notes, and prompts.
 > **Do not deliver this repo to a client.** Use the export scripts to produce a clean client repo.
 
+## Workspace safety
+
+- This is an **internal Cursor working repo**. Before running any project prompts, verify the marker file `.internal_cursor_project_root` exists in the repo root.
+- The client delivery repo is a **separate** repo. Keep it clean.
+- Run Cursor prompts and use `.cursor/rules` **only** from this internal repo, never from the client delivery repo.
+
 ## Overview
 
 <Short internal description of the project, goals, and current status.>

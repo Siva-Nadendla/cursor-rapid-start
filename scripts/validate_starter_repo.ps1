@@ -13,6 +13,22 @@
 [CmdletBinding()]
 param()
 
+# Starter kit workspace safety check
+$ExpectedStarterRootName = "cursor-rapid-start"
+$StarterCurrentPath = (Get-Location).Path
+$StarterCurrentRoot = Split-Path -Leaf $StarterCurrentPath
+$StarterMarkerFile = Join-Path $StarterCurrentPath ".cursor_rapid_start_root"
+
+if ($StarterCurrentRoot -ne $ExpectedStarterRootName) {
+    Write-Error "Wrong workspace. Expected starter root folder '$ExpectedStarterRootName' but current folder is '$StarterCurrentRoot'. Open cursor-rapid-start and retry."
+    exit 1
+}
+
+if (!(Test-Path $StarterMarkerFile)) {
+    Write-Error "Missing marker file: .cursor_rapid_start_root. This does not appear to be the cursor-rapid-start repo."
+    exit 1
+}
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -63,7 +79,13 @@ $expected = @(
     "scripts\validate_starter_repo.ps1",
     "examples\sample_project_startup.json",
     ".cursor\rules\00_cursor_rapid_start_repo.mdc",
-    ".cursor\rules\01_script_safety.mdc"
+    ".cursor\rules\01_script_safety.mdc",
+    ".cursor_rapid_start_root",
+    ".cursor\rules\00_workspace_safety.mdc",
+    "prompts\00_workspace_safety_check.md",
+    "prompts\01_internal_project_workspace_safety.md",
+    "prompts\02_run_starter_kit.md",
+    "templates\internal_workspace_safety_check.ps1.template"
 )
 
 foreach ($item in $expected) {

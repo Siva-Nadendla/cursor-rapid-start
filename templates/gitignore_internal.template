@@ -1,6 +1,9 @@
 # Internal working repo .gitignore
 # Internal repos MAY keep .cursor/ tracked. Secrets/outputs are always ignored.
 
+# Project marker (must stay tracked - never ignore)
+!.internal_cursor_project_root
+
 # Secrets / credentials
 .env
 .env.*
